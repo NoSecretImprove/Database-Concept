@@ -1,9 +1,29 @@
 const schema = require("./config.json");
-const UInt32Max = 4294967295n;
+
+const UInt16Max = 65535;
+const UInt32Max = 4294967295;
+const UInt64Max = 18446744073709551615n;
+const UInt128Max = 340282366920938463463374607431768211455n;
+
+const Int16Max = 32767;
+const Int16Min = -32768;
+
+const Int32Max = 2147483647;
+const Int32Min = -2147483648;
+
+const Int64Max = 9223372036854775807n;
+const Int64Min = -9223372036854775808n;
+
+const Int128Max = 170141183460469231731687303715884105727n;
+const Int128Min = -170141183460469231731687303715884105728n;
 
 function normalizeBuffer(input) {
     if (input instanceof Buffer) {
         return input;
+    }
+
+    if (typeof input == "string") {
+        return Buffer.from(input, "binary")
     }
 
     return Buffer.from(input);
@@ -14,55 +34,64 @@ const emptyBuffer = Buffer.from([]);
 function encodeField(field, value) {
     switch (field.type) {
         case 0: {
+            if (value < -127 || value > 127) throw Error("Invalid Int8");
             const buf = Buffer.alloc(1);
             buf.writeInt8(value);
 
             return buf;
         }
         case 1: {
+            if (value < 0 || value > 256) throw Error("Invalid UInt8");
             const buf = Buffer.alloc(1);
             buf.writeUInt8(value);
 
             return buf;
         }
         case 2: {
+            if (value < Int16Min || value > Int16Max) throw Error("Invalid Int16");
             const buf = Buffer.alloc(2);
             buf.writeInt16BE(value);
 
             return buf;
         }
         case 3: {
+            if (value < 0 || value > UInt16Max) throw Error("Invalid UInt16");
             const buf = Buffer.alloc(2);
             buf.writeUInt16BE(value);
 
             return buf;
         }
         case 4: {
+            if (value < Int32Min || value > Int32Max) throw Error("Invalid Int32");
             const buf = Buffer.alloc(4);
             buf.writeInt32BE(value);
 
             return buf;
         }
         case 5: {
+            if (value < 0 || value > UInt32Max) throw Error("Invalid UInt32");
             const buf = Buffer.alloc(4);
             buf.writeUInt32BE(value);
 
             return buf;
         }
         case 6: {
+            if (value < Int64Min || value > Int64Max) throw Error("Invalid Int64");
             const buf = Buffer.alloc(8);
-            buf.writeInt64BE(value);
+            buf.writeBigInt64BE(value);
 
             return buf;
         }
         case 7: {
+            if (value < 0n || value > UInt64Max) throw Error("Invalid UInt64");
             const buf = Buffer.alloc(8);
-            buf.writeUInt64BE(value);
+            buf.writeBigUInt64BE(value);
 
             return buf;
         }
 
         case 8: {
+            if (value < Int128Min || value > Int128Max) throw Error("Invalid Int128");
             const UIntValue = BigInt.asUintN(128, value);
             const buf = Buffer.alloc(16);
             buf.writeBigUInt64BE(UIntValue >> 64n);
@@ -72,6 +101,7 @@ function encodeField(field, value) {
         }
 
         case 9: {
+            if (value < 0n || value > UInt128Max) throw Error("Invalid UInt128");
             const buf = Buffer.alloc(16);
             buf.writeBigUInt64BE(value >> 64n);
             buf.writeBigUInt64BE(value & 0xffffffffffffffffn, 8);
@@ -120,11 +150,11 @@ function encodeField(field, value) {
 function decodeField(field, stream) {
     switch (field.type) {
         case 0: {
-            return stream.read(1).readInt8BE();
+            return stream.read(1).readInt8();
         }
 
         case 1: {
-            return stream.read(1).readUInt8BE();
+            return stream.read(1).readUInt8();
         }
 
         case 2: {
@@ -144,7 +174,7 @@ function decodeField(field, stream) {
         }
 
         case 6: {
-            return stream.read(8).readBigUInt64BE();
+            return stream.read(8).readBigInt64BE();
         }
 
         case 7: {
@@ -169,6 +199,10 @@ function decodeField(field, stream) {
 
         case 10: {
             return stream.read(8).readDoubleBE();
+        }
+
+        case 11: {
+            return stream.read(4).readFloatBE();
         }
 
         case 12: {
@@ -295,14 +329,34 @@ function decodeSchema(schema, buf) {
     return obj;
 }
 
+// Example
+
+const json = {
+    i8: -127,
+    u8: 255,
+    i16: -32768,
+    u16: 65535,
+    i32: -2147483648,
+    u32: 4294967295,
+    i64: -9223372036854775808n,
+    u64: 18446744073709551615n,
+    i128: -170141183460469231731687303715884105728n,
+    u128: 340282366920938463463374607431768211455n,
+    double: 1.175494351E-38,
+    float: 1.175494351E-38,
+    len_str: "Hello, World",
+    str: "I can type anything of any length, fr?",
+    len_buf: Buffer.from("43574fd420fd9aec48227b1c", "hex"),
+    buf: Buffer.from("Any length? god damm")
+}
+
+const encoded = encodeSchema(schema.allTypes, json)
+
+console.log(encoded)
+
 console.log(decodeSchema(
-    schema.users,
-    encodeSchema(schema.users, {
-        username: "NoSecretImprove",
-        passwordSalt: Buffer.from("43574fd420fd9aec48227b1c89bbd34c", "hex"),
-        passwordHash: Buffer.from("083c93e1cea4b90607403f0a5540315f0ac59b0d4f825f10441201f4889f432a", "hex"),
-        isAdmin: true
-    })
+    schema.allTypes,
+    encoded
 ))
 
 //console.log(encodeField({type:12, length: 3}, "hi"));

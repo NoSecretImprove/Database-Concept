@@ -34,7 +34,7 @@ const typeEnum = {
     Boolean: 14
 }
 
-const fieldRegex = /^([A-z]*)({\d*})?(!?)$/;
+const fieldRegex = /^([A-z0-9]*)({\d*})?(!?)$/;
 
 function decodeFieldValue(input) {
     const inputMatch = input.match(fieldRegex);
@@ -43,7 +43,7 @@ function decodeFieldValue(input) {
 
     const type = inputMatch[1];
 
-    if (!typeEnum[type]) throw TypeError("Invalid Type: " + type);
+    if (typeof typeEnum[type] == "undefined") throw TypeError("Invalid Type: " + type);
 
     let returnValue = { type: typeEnum[type], required: inputMatch[3] === "!" };
 
