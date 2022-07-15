@@ -1,0 +1,3 @@
+07 (Offset Flag) 0000000f (username length as UInt32) 4e6f536563726574496d70726f7665 (username) 43574fd420fd9aec48227b1c89bbd34c (passwordSalt) 083c93e1cea4b90607403f0a5540315f0ac59b0d4f825f10441201f4889f432a (passworHash)
+
+Offset Flag = Starts from last bit, if first bit is set then the first optional field exists, etc.

@@ -1,0 +1,17 @@
+{
+    "users": {
+        "fields": {
+            "username": {
+                "type": 12
+            },
+            "passwordSalt": {
+                "type": 13,
+                "length": 16
+            },
+            "passwordHash": {
+                "type": 13,
+                "length": 32
+            }
+        }
+    }
+}

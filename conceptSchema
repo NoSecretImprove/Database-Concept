@@ -1,0 +1,6 @@
+{dbName} {
+  requiredUInt128: UInt128!
+  optionalString: String
+  40_byte_buffer: Buffer{40},
+  unknown_size_buffer: Buffer
+}

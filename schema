@@ -1,0 +1,6 @@
+users {
+  username: String!
+  passwordSalt: Buffer {16}!
+  passwordHash: Buffer {32}!
+  isAdmin: Boolean
+}

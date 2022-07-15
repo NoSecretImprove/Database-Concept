@@ -1,0 +1,28 @@
+{
+  "users": {
+    "fields": [
+      {
+        "type": 12,
+        "required": false,
+        "name": "username"
+      },
+      {
+        "type": 13,
+        "required": false,
+        "length": 16,
+        "name": "passwordSalt"
+      },
+      {
+        "type": 13,
+        "required": false,
+        "length": 32,
+        "name": "passwordHash"
+      },
+      {
+        "type": 14,
+        "required": false,
+        "name": "isAdmin"
+      }
+    ]
+  }
+}
