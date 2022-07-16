@@ -257,18 +257,20 @@ function encodeSchema(schema, obj) {
             }
             bitIndex++;
         } else {
+            const valueExists = typeof value != "undefined";
+
             if (field.required) {
-                if (typeof value == "undefined") {
+                if (!valueExists) {
                     if (field.required) throw Error(`Type '${field.name}' is required.`);
                 }
             } else {
-                if (typeof value != "undefined") {
+                if (valueExists) {
                     bits |= (1n << bitIndex);
                 }
                 bitIndex++;
             }
 
-            if (value) {
+            if (valueExists) {
                 bufferArray.push(encodeField(field, value))
             }
         }
@@ -313,16 +315,15 @@ function decodeSchema(schema, buf) {
         if (field.type == 14) {
             obj[field.name] = (flags & (1n << flagIndex)) != 0;
             flagIndex++;
-        } else {
-            let exists = true;
-            if (field.required != true) {
-                exists = (flags & (1n << flagIndex)) != 0;
-                flagIndex++;
-            }
-            if (exists) {
-                obj[field.name] = decodeField(field, stream);
-            }
-            
+            continue;
+        }
+        let exists = true;
+        if (field.required != true) {
+            exists = (flags & (1n << flagIndex)) != 0;
+            flagIndex++;
+        }
+        if (exists) {
+            obj[field.name] = decodeField(field, stream);
         }
     }
 
@@ -343,7 +344,7 @@ const json = {
     i128: -170141183460469231731687303715884105728n,
     u128: 340282366920938463463374607431768211455n,
     double: 1.175494351E-38,
-    float: 1.175494351E-38,
+    float: 1.175494351E-380,
     len_str: "Hello, World",
     str: "I can type anything of any length, fr?",
     len_buf: Buffer.from("43574fd420fd9aec48227b1c", "hex"),
@@ -352,7 +353,6 @@ const json = {
 
 const encoded = encodeSchema(schema.allTypes, json)
 
-console.log(encoded)
 
 console.log(decodeSchema(
     schema.allTypes,
