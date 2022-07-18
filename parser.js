@@ -552,6 +552,70 @@ function decodeObject(buf) {
     return obj;
 }
 
+const ArrayKeyEnd = Buffer.from("ff", "hex");
+
+function encodeArray(arr) {
+    let flags = 0n;
+    let flagIndex = 0n;
+    let typeArray = [];
+    let valueBufferArray = [];
+
+    for (const value of arr) {
+        const valueType = detectType(value);
+        typeArray.push(valueType);
+
+        if (valueType == 14) {
+            if (value) {
+                flags |= (1n << flagIndex);
+            }
+            flagIndex++;
+        } else {
+            const encodedValue = encodeField({ type: valueType }, value);
+            valueBufferArray.push(encodedValue)
+        }
+    }
+
+    const flagByteLength = computeBytes(flagIndex);
+    const flagBytes = encodeByteN(flags, flagByteLength)
+
+    return Buffer.concat([
+        Buffer.from(typeArray),
+        ArrayKeyEnd,
+        flagBytes,
+        ...valueBufferArray
+    ])
+}
+
+function decodeArray(buf) {
+    console.log(buf)
+    let arr = [];
+
+    const types = [];
+    let flagSize = 0n;
+    const stream = new DecodeStream(buf);
+
+    for (;;) {
+        const type = stream.read(1).readUInt8();
+        if (type == 0xff) break;
+        if (type == 14) flagSize++;
+        types.push(type);
+    }
+
+    flagSize = computeBytes(flagSize);
+
+    let flagReader = new FlagReader(BigInt("0x" + (stream.read(flagSize).toString("hex") || "0")))
+
+    for (const type of types) {
+        if (type == 14) {
+            arr.push(flagReader.read());
+        } else {
+            arr.push(decodeField({ type }, stream));
+        }
+    }
+
+    return arr;
+}
+
 // Example
 
 const encodedObj = encodeObject({
@@ -572,6 +636,8 @@ const encodedObj = encodeObject({
     len_buf: Buffer.from("43574fd420fd9aec48227b1c", "hex"),
     buf: Buffer.from("Any length? god damm")
 })
+
+require('fs').writeFileSync("forkaitai", encodedObj);
 
 console.log(decodeObject(encodedObj))
 
